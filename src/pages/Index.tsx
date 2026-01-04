@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import Icon from "@/components/ui/icon";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [activeService, setActiveService] = useState<number | null>(null);
@@ -14,6 +16,10 @@ const Index = () => {
   const [calcHeight, setCalcHeight] = useState([15]);
   const [calcFont, setCalcFont] = useState("Bebas Neue");
   const [calcColor, setCalcColor] = useState("#F97316");
+  const [email, setEmail] = useState("");
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const previewRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
   
   const pricePerCm = 120;
   const letterCount = calcText.length;
@@ -38,6 +44,105 @@ const Index = () => {
     { name: "Жёлтый", value: "#FBBF24" },
     { name: "Белый", value: "#FFFFFF" }
   ];
+  
+  const downloadVisualization = () => {
+    if (!calcText) {
+      toast({
+        title: "Ошибка",
+        description: "Введите текст вывески для создания визуализации",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    canvas.width = 1200;
+    canvas.height = 600;
+    
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, '#1a1a1a');
+    gradient.addColorStop(1, '#2d2d2d');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    const fontSize = Math.max(48, Math.min(120, calcHeight[0] * 2));
+    ctx.font = `bold ${fontSize}px "${calcFont}", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    ctx.shadowBlur = 40;
+    ctx.shadowColor = calcColor;
+    ctx.fillStyle = calcColor;
+    ctx.fillText(calcText, canvas.width / 2, canvas.height / 2);
+    
+    ctx.shadowBlur = 20;
+    ctx.fillText(calcText, canvas.width / 2, canvas.height / 2);
+    
+    ctx.shadowBlur = 0;
+    ctx.font = '20px "Open Sans", sans-serif';
+    ctx.fillStyle = '#888';
+    ctx.fillText(`Шрифт: ${calcFont} | Высота: ${calcHeight[0]} см | Цвет: ${colors.find(c => c.value === calcColor)?.name}`, canvas.width / 2, canvas.height - 40);
+    
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `вывеска-${calcText.replace(/\s+/g, '-')}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Готово!",
+        description: "Визуализация сохранена на ваше устройство"
+      });
+    });
+  };
+  
+  const sendToEmail = () => {
+    if (!email) {
+      toast({
+        title: "Ошибка",
+        description: "Введите email для отправки",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!calcText) {
+      toast({
+        title: "Ошибка",
+        description: "Введите текст вывески для расчёта",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const emailSubject = encodeURIComponent('Расчёт стоимости вывески');
+    const emailBody = encodeURIComponent(
+      `Здравствуйте!\n\n` +
+      `Прошу рассчитать стоимость изготовления объёмных букв с подсветкой:\n\n` +
+      `Текст: ${calcText}\n` +
+      `Количество символов: ${letterCount}\n` +
+      `Высота букв: ${calcHeight[0]} см\n` +
+      `Шрифт: ${calcFont}\n` +
+      `Цвет: ${colors.find(c => c.value === calcColor)?.name} (${calcColor})\n\n` +
+      `Расчётная стоимость: ${totalPrice.toLocaleString('ru-RU')} ₽\n\n` +
+      `Жду вашего предложения.\n\n` +
+      `С уважением.`
+    );
+    
+    window.location.href = `mailto:${email}?subject=${emailSubject}&body=${emailBody}`;
+    
+    setIsEmailDialogOpen(false);
+    toast({
+      title: "Готово!",
+      description: "Откроется почтовое приложение для отправки"
+    });
+  };
 
   const services = [
     {
@@ -240,10 +345,69 @@ const Index = () => {
                       <p>{letterCount} {letterCount === 1 ? 'символ' : letterCount < 5 ? 'символа' : 'символов'} × {calcHeight[0]} см × {pricePerCm} ₽/см</p>
                       <p className="mt-3 text-sm">✓ С LED-подсветкой ✓ Монтаж включён ✓ Гарантия 24 месяца</p>
                     </div>
-                    <Button size="lg" className="mt-4 bg-white text-primary hover:bg-white/90 font-semibold w-full">
-                      <Icon name="Send" size={20} className="mr-2" />
-                      Заказать изготовление
-                    </Button>
+                    <div className="space-y-3 mt-4">
+                      <Button size="lg" className="bg-white text-primary hover:bg-white/90 font-semibold w-full">
+                        <Icon name="ShoppingCart" size={20} className="mr-2" />
+                        Заказать изготовление
+                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
+                          onClick={downloadVisualization}
+                          disabled={!calcText}
+                        >
+                          <Icon name="Download" size={16} className="mr-2" />
+                          Скачать превью
+                        </Button>
+                        <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
+                              disabled={!calcText}
+                            >
+                              <Icon name="Mail" size={16} className="mr-2" />
+                              Отправить на email
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Отправить расчёт на email</DialogTitle>
+                              <DialogDescription>
+                                Введите email, на который нужно отправить расчёт стоимости вывески
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 mt-4">
+                              <div>
+                                <Label htmlFor="email">Email</Label>
+                                <Input
+                                  id="email"
+                                  type="email"
+                                  placeholder="your@email.com"
+                                  value={email}
+                                  onChange={(e) => setEmail(e.target.value)}
+                                  className="mt-2"
+                                />
+                              </div>
+                              <div className="bg-muted p-4 rounded-lg text-sm space-y-1">
+                                <p><strong>Текст:</strong> {calcText}</p>
+                                <p><strong>Высота:</strong> {calcHeight[0]} см</p>
+                                <p><strong>Шрифт:</strong> {calcFont}</p>
+                                <p><strong>Цвет:</strong> {colors.find(c => c.value === calcColor)?.name}</p>
+                                <p className="text-lg font-bold text-primary mt-2">{totalPrice.toLocaleString('ru-RU')} ₽</p>
+                              </div>
+                              <Button onClick={sendToEmail} className="w-full">
+                                <Icon name="Send" size={18} className="mr-2" />
+                                Отправить
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
