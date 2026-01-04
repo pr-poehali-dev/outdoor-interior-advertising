@@ -196,7 +196,7 @@ const Calculator = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {fonts.map((font) => (
-                        <SelectItem key={font.value} value={font.value} style={{ fontFamily: font.value }}>
+                        <SelectItem key={font.value} value={font.value} style={{ fontFamily: `"${font.value}", sans-serif` }}>
                           {font.name}
                         </SelectItem>
                       ))}
@@ -317,7 +317,7 @@ const Calculator = () => {
                     <div 
                       className="font-bold tracking-wider transition-all duration-300"
                       style={{ 
-                        fontFamily: calcFont,
+                        fontFamily: `"${calcFont}", sans-serif`,
                         color: calcColor,
                         fontSize: `${Math.max(32, Math.min(96, calcHeight[0] * 1.5))}px`,
                         textShadow: `0 0 20px ${calcColor}80, 0 0 40px ${calcColor}60, 0 0 60px ${calcColor}40`,
