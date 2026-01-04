@@ -1,11 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import Icon from "@/components/ui/icon";
 import { useState } from "react";
 
 const Index = () => {
   const [activeService, setActiveService] = useState<number | null>(null);
+  const [calcText, setCalcText] = useState("");
+  const [calcHeight, setCalcHeight] = useState([15]);
+  
+  const pricePerCm = 120;
+  const letterCount = calcText.length;
+  const totalPrice = letterCount * calcHeight[0] * pricePerCm;
 
   const services = [
     {
@@ -111,6 +120,73 @@ const Index = () => {
               Посмотреть работы
             </Button>
           </div>
+        </div>
+      </section>
+
+      <section id="calculator" className="py-20 px-4 bg-gradient-to-br from-secondary/10 to-background">
+        <div className="container mx-auto max-w-4xl">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 bg-secondary/10 px-4 py-2 rounded-full text-secondary font-semibold mb-4">
+              <Icon name="Calculator" size={20} />
+              <span>Калькулятор стоимости</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">Рассчитайте стоимость объёмных букв</h2>
+            <p className="text-xl text-muted-foreground">С LED-подсветкой для вашего бизнеса</p>
+          </div>
+          
+          <Card className="shadow-2xl animate-scale-in">
+            <CardContent className="p-8">
+              <div className="space-y-8">
+                <div>
+                  <Label htmlFor="calc-text" className="text-lg font-semibold mb-3 block">Введите текст вывески</Label>
+                  <Input
+                    id="calc-text"
+                    placeholder="Например: COFFEE SHOP"
+                    value={calcText}
+                    onChange={(e) => setCalcText(e.target.value)}
+                    className="text-lg h-14"
+                  />
+                  <p className="text-sm text-muted-foreground mt-2">Количество символов: {letterCount}</p>
+                </div>
+                
+                <div>
+                  <Label className="text-lg font-semibold mb-4 block">
+                    Высота буквы: <span className="text-primary">{calcHeight[0]} см</span>
+                  </Label>
+                  <Slider
+                    value={calcHeight}
+                    onValueChange={setCalcHeight}
+                    min={5}
+                    max={100}
+                    step={5}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-sm text-muted-foreground mt-2">
+                    <span>5 см</span>
+                    <span>100 см</span>
+                  </div>
+                </div>
+                
+                <div className="bg-gradient-to-r from-primary to-secondary p-8 rounded-2xl text-white text-center">
+                  <div className="mb-4">
+                    <Icon name="Sparkles" size={48} className="mx-auto mb-2" />
+                    <p className="text-lg opacity-90">Стоимость изготовления</p>
+                  </div>
+                  <div className="text-6xl font-bold mb-4">
+                    {totalPrice.toLocaleString('ru-RU')} ₽
+                  </div>
+                  <div className="text-sm opacity-90 space-y-1">
+                    <p>{letterCount} {letterCount === 1 ? 'символ' : letterCount < 5 ? 'символа' : 'символов'} × {calcHeight[0]} см × {pricePerCm} ₽/см</p>
+                    <p className="mt-4 text-base">✓ С LED-подсветкой ✓ Монтаж включён ✓ Гарантия 24 месяца</p>
+                  </div>
+                  <Button size="lg" className="mt-6 bg-white text-primary hover:bg-white/90 font-semibold">
+                    <Icon name="Send" size={20} className="mr-2" />
+                    Заказать изготовление
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
